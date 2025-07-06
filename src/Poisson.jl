@@ -37,11 +37,46 @@ struct Poisson{T,S<:AbstractArray{T},V<:AbstractArray{T}} <: AbstractPoisson{T,S
     end
 end
 
-using ForwardDiff: Dual,Tag
-Base.eps(::Type{D}) where D<:Dual{Tag{G,T}} where {G,T} = eps(T)
+# using ForwardDiff: Dual,Tag
+# Base.eps(::Type{D}) where D<:Dual{Tag{G,T}} where {G,T} = eps(T)
+# function set_diag!(D,iD,L)
+#     @inside D[I] = diag(I,L)
+#     @inside iD[I] = abs2(D[I])<2eps(eltype(D)) ? 0. : inv(D[I])
+# end
+# update!(p::Poisson) = set_diag!(p.D,p.iD,p.L)
+
+# @fastmath @inline function diag(I::CartesianIndex{d},L) where {d}
+#     s = zero(eltype(L))
+#     for i in 1:d
+#         s -= @inbounds(L[I,i]+L[I+δ(i,I),i])
+#     end
+#     return s
+# end
+
+# """
+#     mult!(p::Poisson,x)
+
+# Efficient function for Poisson matrix-vector multiplication. 
+# Fills `p.z = p.A x` with 0 in the ghost cells.
+# """
+# function mult!(p::Poisson,x)
+#     @assert axes(p.z)==axes(x)
+#     perBC!(x,p.perdir)
+#     fill!(p.z,0)
+#     @inside p.z[I] = mult(I,p.L,p.D,x)
+#     return p.z
+# end
+# @fastmath @inline function mult(I::CartesianIndex{d},L,D,x) where {d}
+#     s = @inbounds(x[I]*D[I])
+#     for i in 1:d
+#         s += @inbounds(x[I-δ(i,I)]*L[I,i]+x[I+δ(i,I)]*L[I+δ(i,I),i])
+#     end
+#     return s
+# end
+
 function set_diag!(D,iD,L)
     @inside D[I] = diag(I,L)
-    @inside iD[I] = abs2(D[I])<2eps(eltype(D)) ? 0. : inv(D[I])
+    @inside iD[I] = abs2(D[I])<1e-8 ? 0. : inv(D[I])
 end
 update!(p::Poisson) = set_diag!(p.D,p.iD,p.L)
 
@@ -52,6 +87,21 @@ update!(p::Poisson) = set_diag!(p.D,p.iD,p.L)
     end
     return s
 end
+@fastmath @inline function multL(I::CartesianIndex{d},L,x) where {d}
+    s = zero(eltype(L))
+    for i in 1:d
+        s += @inbounds(x[I-δ(i,I)]*L[I,i])
+    end
+    return s
+end
+@fastmath @inline function multU(I::CartesianIndex{d},L,x) where {d}
+    s = zero(eltype(L))
+    for i in 1:d
+        s += @inbounds(x[I+δ(i,I)]*L[I+δ(i,I),i])
+    end
+    return s
+end
+@fastmath @inline mult(I,L,D,x) = @inbounds(x[I]*D[I])+multL(I,L,x)+multU(I,L,x)
 
 """
     mult!(p::Poisson,x)
@@ -61,17 +111,9 @@ Fills `p.z = p.A x` with 0 in the ghost cells.
 """
 function mult!(p::Poisson,x)
     @assert axes(p.z)==axes(x)
-    perBC!(x,p.perdir)
     fill!(p.z,0)
     @inside p.z[I] = mult(I,p.L,p.D,x)
     return p.z
-end
-@fastmath @inline function mult(I::CartesianIndex{d},L,D,x) where {d}
-    s = @inbounds(x[I]*D[I])
-    for i in 1:d
-        s += @inbounds(x[I-δ(i,I)]*L[I,i]+x[I+δ(i,I)]*L[I+δ(i,I),i])
-    end
-    return s
 end
 
 """
@@ -88,19 +130,16 @@ minimizing the local effect. Other approaches are possible.
 Note: These corrections mean `x` is not strictly solving `Ax=z`, but
 without the corrections, no solution exists.
 """
-function residual!(p::Poisson) 
-    perBC!(p.x,p.perdir)
-    @inside p.r[I] = ifelse(p.iD[I]==0,0,p.z[I]-mult(I,p.L,p.D,p.x))
-    s = sum(p.r)/length(inside(p.r))
-    abs(s) <= 2eps(eltype(s)) && return
-    @inside p.r[I] = p.r[I]-s
-end
+# function residual!(p::Poisson) 
+#     @inside p.r[I] = ifelse(p.iD[I]==0,0,p.z[I]-mult(I,p.L,p.D,p.x))
+#     s = sum(p.r)/length(p.r[inside(p.r)])
+#     abs(s) <= 2eps(eltype(s)) && return
+#     @inside p.r[I] = p.r[I]-s
+# end
+residual!(p::Poisson) = @inside p.r[I] = p.z[I]-mult(I,p.L,p.D,p.x)
 
-function increment!(p::Poisson) 
-    perBC!(p.ϵ,p.perdir)
-    @loop (p.r[I] = p.r[I]-mult(I,p.L,p.D,p.ϵ);
-           p.x[I] = p.x[I]+p.ϵ[I]) over I ∈ inside(p.x)
-end
+increment!(p::Poisson) = @loop (p.r[I] = p.r[I]-mult(I,p.L,p.D,p.ϵ);
+                                p.x[I] = p.x[I]+p.ϵ[I]) over I ∈ inside(p.x)
 """
     Jacobi!(p::Poisson; it=1)
 
