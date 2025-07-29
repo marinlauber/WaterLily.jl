@@ -1,7 +1,8 @@
 module WaterLilyMakieExt
 
-using Makie, WaterLily
+using Makie, WaterLily, ForwardDiff
 using Makie.GeometryBasics, Makie.PlotUtils
+using ForwardDiff: Dual, value
 import WaterLily: viz!, get_body, plot_body_obs!
 
 """
@@ -11,15 +12,17 @@ Measure the body SDF and update the CPU buffer array.
 """
 function update_body!(a_cpu::Array, sim)
     WaterLily.measure_sdf!(sim.flow.σ, sim.body, WaterLily.time(sim))
-    copyto!(a_cpu, sim.flow.σ[inside(sim.flow.σ)])
+    copyto!(a_cpu, ad_f(sim)(sim.flow.σ[inside(sim.flow.σ)]))
 end
 
 """
     default_colormap_and_levels(minv, maxv, threshhold, levels)
 """
-function default_colormap_and_levels(clims; threshhold=0.1, nlevels=20, colormap=:seismic, threshhold_color=RGB(1,1,1))
-    lowerrange = range(clims[1], -threshhold, (nlevels - 1) ÷ 2)
-    upperrange = range(threshhold, clims[2], (nlevels - 1) ÷ 2)
+function default_colormap_and_levels(clims; threshhold=0.1, nlevels=10, colormap=:seismic, threshhold_color=RGB(1,1,1))
+    @assert clims[2] > clims[1] "clims argument does not satisfy clims[2] > clims[1]"
+    Δ = clims[2] - clims[1]
+    lowerrange = range(clims[1], clims[1] + Δ/2 - abs(threshhold), (nlevels - 1) ÷ 2)
+    upperrange = range(clims[1] + Δ/2 + abs(threshhold), clims[2], (nlevels - 1) ÷ 2)
     colors = palette(colormap, nlevels).colors.colors
     colors[[(nlevels - 1) ÷ 2 + 1, (nlevels - 1) ÷ 2 + 2]] .= threshhold_color
     colors, [lowerrange; upperrange]
@@ -32,12 +35,12 @@ Default visualization function for 2D/3D simulations
 function ω2D_viz!(cpu_array, sim)
     a = sim.flow.σ
     WaterLily.@inside a[I] = WaterLily.curl(3,I,sim.flow.u)
-    copyto!(cpu_array, a[inside(a)])
+    copyto!(cpu_array, ad_f(sim)(a[inside(a)]))
 end
 function ω3D_viz!(cpu_array, sim)
     a = sim.flow.σ
     WaterLily.@inside a[I] = WaterLily.ω_mag(I,sim.flow.u)
-    copyto!(cpu_array, a[inside(a)])
+    copyto!(cpu_array, ad_f(sim)(a[inside(a)]))
 end
 ω_viz!(n) = n == 2 ? ω2D_viz! : ω3D_viz!
 
@@ -81,7 +84,7 @@ Plot the 3D scalar `σ::Observable` in a 3D volume axis.
 plot_σ_obs!(ax, σ::Observable{Array{T,3}} where T; kwargs...) = Makie.volume!(ax, σ; kwargs...)
 
 """
-    viz!(sim; f=ω_viz!(ndims(sim.flow.p)), duration=nothing, step=0.1, remeasure=true, verbose=true,
+    viz!(sim; f=nothing, duration=nothing, step=0.1, remeasure=true, verbose=true,
         λ=quick, udf=nothing, udf_kwargs=nothing,
         d=ndims(sim.flow.p), CIs=nothing, cut=nothing, tidy_colormap=true,
         body=!(typeof(sim.body)<:WaterLily.NoBody), body_color=:grey, body2mesh=false,
@@ -164,7 +167,7 @@ function viz!(sim; f=nothing, duration=nothing, step=0.1, remeasure=true, verbos
     isnothing(f) && (f = ω_viz!(d))
 
     isnothing(CIs) && (CIs = CartesianIndices(Tuple(1:n for n in size(inside(sim.flow.σ)))))
-    dat = sim.flow.σ[inside(sim.flow.σ)] |> Array
+    dat = sim.flow.σ[inside(sim.flow.σ)] |> ad_f(sim) |> Array
     if d != D && all(>(1), length.(CIs.indices)) # Requesting 2D plot on 3D data, and CIs is not a slice
         isnothing(cut) && (cut = (0, 0, size(dat,3)÷2))
         @assert count(==(0), cut) == 2 "Requesting 2D plot on 3D data, but `cut` is not an slice, eg: (0,0,10)"
@@ -178,10 +181,10 @@ function viz!(sim; f=nothing, duration=nothing, step=0.1, remeasure=true, verbos
     end
 
     f(dat, sim)
-    σ = WaterLily.squeeze(dat[CIs]) |> Observable
+    σ = WaterLily.squeeze(dat[CIs]) |> ad_f(sim) |> Observable
     if body
         update_body!(dat, sim)
-        σb_obs = get_body(WaterLily.squeeze(dat[CIs]), Val{body2mesh}()) |> Observable
+        σb_obs = get_body(WaterLily.squeeze(dat[CIs]), Val{body2mesh}()) |> ad_f(sim) |> Observable
     end
 
     !isnothing(theme) && set_theme!(theme)
@@ -212,18 +215,26 @@ function viz!(sim; f=nothing, duration=nothing, step=0.1, remeasure=true, verbos
                 end
             end
         else
-            display(fig)
+            display(Makie.current_backend().Screen(), fig)
             for tᵢ in range(t₀,t₀+duration;step)
                 step_sim_and_viz!(sim,tᵢ)
             end
         end
+        return fig, ax
     end
-    isnothing(video) && display(fig)
+    display(Makie.current_backend().Screen(), fig)
     return fig, ax
+end
+function viz!(sim, a::AbstractArray; kwargs...)
+    kwargs = remove_kwargs(:f, :duration; kwargs...) # do not allow co-visualization (is not a simulation)
+    @assert size(a) == size(sim.flow.σ) "Visualized array has different size than Simulation."
+    f(cpu_array, sim) = copyto!(cpu_array, Array(a[inside(a)]))
+    viz!(sim; f, duration=nothing, kwargs...)
 end
 
 # Utils
 add_kwarg(args...; kwargs...) = (; kwargs..., (p.first => p.second for p in args)...) |> pairs
 remove_kwargs(args...; kwargs...) = (;(x.first=>x.second for x in kwargs if !in(x.first, args))...) |> pairs
+ad_f(sim) = eltype(sim.flow.p) <: Dual ? x -> value.(x) : identity
 
 end # module

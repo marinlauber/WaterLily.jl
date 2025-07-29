@@ -71,7 +71,7 @@ end
 
 Uses `sdf(body,x,t)` to fill `a`. Defaults to fastd²=0 for quick evaluation.
 """
-measure_sdf!(a::AbstractArray{T},body::AbstractBody,t=zero(T);fastd²=zero(T)) where T = @inside a[I] = sdf(body,loc(0,I,T),t;fastd²)::T
+measure_sdf!(a::AbstractArray{T},body::AbstractBody,t=zero(T);fastd²=zero(T)) where T = @inside a[I] = sdf(body,loc(0,I,T),t;fastd²)
 
 """
     NoBody
