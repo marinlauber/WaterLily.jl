@@ -264,7 +264,7 @@ end
 """
 function interp(x::SVector{D,T}, arr::AbstractArray{T,D}) where {D,T}
     # Index below the interpolation coordinate and the difference
-    i = floor.(Int,x); y = x.-i
+    x = x .+ 1.5f0; i = floor.(Int,x); y = x.-i
 
     # CartesianIndices around x
     I = CartesianIndex(i...); R = I:I+oneunit(I)
