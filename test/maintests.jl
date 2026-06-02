@@ -107,10 +107,10 @@ backend != "KernelAbstractions" && throw(ArgumentError("SIMD backend not allowed
     end
 end
 
-function Poisson_setup(poisson,N::NTuple{D};f=Array,T=Float32, kwargs...) where D
+function Poisson_setup(poisson,N::NTuple{D};f=Array,T=Float32, cargs=(), kwargs...) where D
     c = ones(T,N...,D) |> f; BC!(c, ntuple(zero,D))
     x = zeros(T,N) |> f; z = copy(x)
-    pois = poisson(x,c,z)
+    pois = poisson(x,c,z; cargs...)
     soln = map(I->T(I.I[1]),CartesianIndices(N)) |> f
     I = first(inside(x))
     GPUArrays.@allowscalar @. soln -= soln[I]
@@ -135,6 +135,13 @@ end
         err,pois = Poisson_setup(Poisson,(2^4+2,2^4+2,2^4+2);f,tol=1e-6,itmx=6)
         @test err < 1e-1    # going down at least
         @test pois.n[] == 6 # should be 6
+        # tol/itmx stored on the struct are used when no kwargs are given,
+        # and a solver! kwarg still overrides them on the fly
+        err,pois = Poisson_setup(Poisson,(2^4+2,2^4+2,2^4+2);f,cargs=(tol=1e-6,itmx=6))
+        @test (pois.tol,pois.itmx) == (Float32(1e-6),6)
+        @test pois.n[] == 6 # stored itmx used by solver! with no kwargs
+        err,pois = Poisson_setup(Poisson,(2^4+2,2^4+2,2^4+2);f,cargs=(tol=1e-6,itmx=6),itmx=3)
+        @test pois.n[] == 3 # explicit kwarg overrides the stored itmx
     end
 end
 
@@ -161,6 +168,13 @@ end
         err,pois = Poisson_setup(MultiLevelPoisson,(2^4+2,2^4+2,2^4+2);f,tol=1e-8,itmx=2)
         @test err < 1e-5    # hits itmx first
         @test pois.n[] == 2 # should be 2
+        # tol/itmx stored on the struct are used when no kwargs are given,
+        # and a solver! kwarg still overrides them on the fly
+        err,pois = Poisson_setup(MultiLevelPoisson,(2^4+2,2^4+2,2^4+2);f,cargs=(tol=1e-8,itmx=2))
+        @test (pois.tol,pois.itmx) == (Float32(1e-8),2)
+        @test pois.n[] == 2 # stored itmx used by solver! with no kwargs
+        err,pois = Poisson_setup(MultiLevelPoisson,(2^4+2,2^4+2,2^4+2);f,cargs=(itmx=2,),itmx=1)
+        @test pois.n[] == 1 # explicit kwarg overrides the stored itmx
     end
 end
 

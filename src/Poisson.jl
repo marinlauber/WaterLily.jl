@@ -29,17 +29,27 @@ struct Poisson{T,S<:AbstractArray{T},V<:AbstractArray{T}} <: AbstractPoisson{T,S
     z :: S # source
     n :: Vector{Int16} # pressure solver iterations
     perdir :: NTuple # direction of periodic boundary condition
-    function Poisson(x::AbstractArray{T},L::AbstractArray{T},z::AbstractArray{T};perdir=()) where T
+    tol :: T # default solver tolerance
+    itmx :: Int # default maximum solver iterations
+    function Poisson(x::AbstractArray{T},L::AbstractArray{T},z::AbstractArray{T};perdir=(),tol=1e-4,itmx=1000) where T
         @assert axes(x) == axes(z) && axes(x) == Base.front(axes(L)) && last(axes(L)) == eachindex(axes(x))
         r = similar(x); fill!(r,0)
         ϵ,D,iD = copy(r),copy(r),copy(r)
         set_diag!(D,iD,L)
-        new{T,typeof(x),typeof(L)}(L,D,iD,x,ϵ,r,z,[],perdir)
+        new{T,typeof(x),typeof(L)}(L,D,iD,x,ϵ,r,z,[],perdir,T(tol),Int(itmx))
     end
 end
 
 using ForwardDiff: Dual,Tag
 Base.eps(::Type{D}) where D<:Dual{Tag{G,T}} where {G,T} = eps(T)
+"""
+    set_diag!(D, iD, L)
+
+Recompute the Poisson diagonal `D[I] = -Σⱼ (L[I,j] + L[I+δⱼ,j])` and its
+inverse `iD = 1/D` (zero where `D=0`, so masked cells stay masked).
+Called from the `Poisson` constructor and from `update!` whenever `L`
+changes (e.g. after the geometry is remeasured).
+"""
 function set_diag!(D,iD,L)
     @inside D[I] = diag(I,L)
     @inside iD[I] = iszero(D[I]) ? D[I] : inv(D[I])
@@ -97,6 +107,14 @@ function residual!(p::Poisson)
     @inside p.r[I] = p.r[I]-s
 end
 
+"""
+    increment!(p::Poisson; ω=1)
+
+Apply one relaxation increment in place: `x ← x + ω·ϵ` and the residual
+`r ← r - ω·A·ϵ`, kept in step. `ϵ` is the smoothing-step correction
+prepared by the caller (Jacobi or Gauss-Seidel); `ω` is the
+under-/over-relaxation factor (default `1` = no scaling).
+"""
 function increment!(p::Poisson{T};ω=1) where {T}
     perBC!(p.ϵ,p.perdir)
     @loop (p.r[I] = p.r[I]-ω*mult(I,p.L,p.D,p.ϵ);
@@ -181,7 +199,7 @@ L₂(p::Poisson) = p.r ⋅ p.r # special method since outside(p.r)≡0
 L∞(p::Poisson) = maximum(abs,p.r)
 
 """
-    solver!(A::Poisson;tol=1e-4,itmx=1e3)
+    solver!(A::Poisson;tol=A.tol,itmx=A.itmx)
 
 Approximate iterative solver for the Poisson matrix equation `Ax=b`.
 
@@ -189,10 +207,11 @@ Approximate iterative solver for the Poisson matrix equation `Ax=b`.
   - `A.x`: Solution vector. Can start with an initial guess.
   - `A.z`: Right-Hand-Side vector. Will be overwritten!
   - `A.n[end]`: stores the number of iterations performed.
-  - `tol`: Convergence tolerance on the `L₂`-norm residual.
-  - `itmx`: Maximum number of iterations.
+  - `tol`: Convergence tolerance on the `L₂`-norm residual. Defaults to
+    `A.tol` (set at construction); pass it explicitly to override per call.
+  - `itmx`: Maximum number of iterations. Defaults to `A.itmx`.
 """
-function solver!(p::Poisson;tol=1e-4,itmx=1e3, kwargs...)
+function solver!(p::Poisson;tol=p.tol,itmx=p.itmx, kwargs...)
     residual!(p); r₂ = L₂(p)
     nᵖ=0; @log ", $nᵖ, $(L∞(p)), $r₂, 1\n"
     while nᵖ<itmx
