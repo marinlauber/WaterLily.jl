@@ -83,8 +83,7 @@ function plot_logger(fname="WaterLily.log")
         for (M,c,name) in series
             plot!(pl, initial(M,r); color=c, ls=:dash, alpha=0.8, label="$name initial")
             plot!(pl, final(M,r);   color=c, lw=2,     alpha=0.8, label=name)
-        end
-        pl
+        end; pl
     end
     p1 = residual_panel(2, "L∞-norm", "L∞-norm of residuals")
     p2 = residual_panel(3, "L₁-norm", "L₁-norm of residuals")
