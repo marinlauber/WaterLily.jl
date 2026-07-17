@@ -135,6 +135,9 @@ Keyword arguments:
         If `name` contains a printf integer placeholder (e.g. `img="frame_%04d.png"` or `img=("frame_%04d.svg", CairoMakie)`),
         one image is saved per simulation frame (like `video`, rendered offscreen with no interactive window); otherwise only the last frame is saved.
         Can be combined with `video`. Defaults to `nothing`.
+        Note that figures containing `volume` plots (3D renders) have no vector representation: the `.svg`/`.pdf` embeds a
+        raster of the scene rendered by the *active* backend, so keep a GL backend active (call `GLMakie.activate!()` if
+        CairoMakie was loaded after GLMakie, since the last loaded backend activates itself).
     - `hidedecorations::Bool`: Figures without axis details.
     - `azimuth::Number`: Camera azimuth angle. Find a suitable angle interactively checking `ax.azimuth.val`
     - `elevation::Number`: Camera elevation angle. Find a suitable angle interactively checking `ax.elevation.val`.
@@ -331,11 +334,28 @@ end
 
 Save `fig` to `name` with `backend`, creating the parent directory if needed. Returns the absolute path,
 or `nothing` (no-op) when `name === nothing`.
+
+Vector formats (`.svg`/`.pdf`) cannot represent `volume` plots: CairoMakie has no raycasting and silently
+skips them, leaving a blank canvas. When the figure contains a `Volume` plot, the whole scene (including
+any axis decorations) is instead rasterized by the *active* backend (which must be GL-capable, e.g. GLMakie)
+and the raster is embedded in the vector container.
 """
 save_img(name::Nothing, backend, fig) = nothing
-function save_img(name, backend, fig)
+function save_img(name, backend, fig; px_per_unit=2)
     dir = dirname(name); isempty(dir) || mkpath(dir)
-    Makie.save(name, fig; backend)
+    ext = lowercase(splitext(name)[2])
+    if ext in (".svg", ".pdf") && any(p -> p isa Makie.Volume, Makie.collect_atomic_plots(fig.scene))
+        Makie.current_backend() === backend && @warn """Saving a $ext of a figure with a volume plot, but the \
+        active backend ($(nameof(backend))) cannot render volumes: the embedded raster will be blank. \
+        Activate a GL backend first, e.g. GLMakie.activate!()."""
+        buf = Makie.colorbuffer(fig; px_per_unit) # raster render with the active (GL) backend
+        w, h = size(fig.scene)
+        scene = Makie.Scene(size=(w, h), camera=Makie.campixel!)
+        Makie.image!(scene, (0, w), (0, h), rotr90(buf))
+        Makie.save(name, scene; backend)
+    else
+        Makie.save(name, fig; backend)
+    end
     return abspath(name)
 end
 
