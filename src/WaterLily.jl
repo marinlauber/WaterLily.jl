@@ -189,19 +189,24 @@ export flood,addbody,body_plot!,sim_gif!,plot_logger
 
 # default Makie functions
 function viz! end
+function viz_step! end
 function get_body end
 function plot_body_obs! end
+# hook set by WaterLilyPathlinesExt.__init__ when Pathlines is loaded
+const _pathlines_viz_hook = Ref{Union{Nothing,Function}}(nothing)
 # export
-export viz!, get_body, plot_body_obs!
+export viz!, viz_step!, get_body, plot_body_obs!
 
 # Check number of threads when loading WaterLily
 """
     check_nthreads()
 
 Check the number of threads available for the Julia session that loads WaterLily.
+Called from `__init__`; skipped during package precompilation (which always runs with one thread).
 A warning is shown when running in serial (JULIA_NUM_THREADS=1) with KernelAbstractions enabled.
 """
 function check_nthreads()
+    Base.generating_output() && return nothing
     if backend == "KernelAbstractions" && Threads.nthreads() == 1
         @warn """
         Using WaterLily in serial (ie. JULIA_NUM_THREADS=1) is not recommended because it defaults to serial CPU execution.
@@ -210,6 +215,7 @@ function check_nthreads()
         """
     end
 end
-check_nthreads()
 
+__init__() = check_nthreads()
+    
 end # module
