@@ -34,6 +34,7 @@ LocalPreferences.toml
 *.pvd
 
 # exceptions
+!/docs/src/assets/custom.css
 !/docs/src/literate-gallery/*.gif
 !/docs/src/literate-gallery/*.png
 !/docs/src/assets/logo.png

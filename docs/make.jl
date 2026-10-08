@@ -39,11 +39,10 @@ include("generate.jl")
         prettyurls = is_ci,
         canonical = "https://waterlily-jl.github.io/WaterLily.jl/stable",
         edit_link = "master",
-        assets = ["assets/favicon.ico"], # logo.png in the same folder is picked up automatically
+        assets = ["assets/favicon.ico", "assets/custom.css"], # logo.png is picked up automatically
         mathengine = Documenter.MathJax3(),
         collapselevel = 1,
     ),
-    authors = "Gabriel Weymouth",
     sitename = "WaterLily.jl",
     draft = liveserver,
     # In draft mode the examples are not executed and the scripts/notebooks are not written,
@@ -62,10 +61,6 @@ include("generate.jl")
             "examples/ThreeD_TaylorGreenVortex.md",
             "examples/ThreeD_Sphere.md",
         ],
-        "Code gallery" => [
-            "Code gallery overview" => "gallery/index.md",
-            "gallery/ParametricBodies_FlexiblePlate.md",
-        ],
         "API reference" => [
             "Reference overview" => "reference/index.md",
             "reference/simulation.md",
@@ -78,6 +73,10 @@ include("generate.jl")
             "reference/plotting.md",
             "reference/utilities.md",
         ],
+        "Code gallery" => [
+            "Code gallery overview" => "gallery/index.md",
+            "gallery/ParametricBodies_FlexiblePlate.md",
+        ]
     ],
 )
 
