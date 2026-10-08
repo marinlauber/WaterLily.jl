@@ -15,7 +15,6 @@ ENV["GKSwstype"] = "100"
 
 using Documenter, WaterLily, Plots, StaticArrays
 using JLD2, ReadVTK, WriteVTK
-using ParametricBodies # used by the code gallery
 
 # Parts of the API live in package extensions, and only exist once the corresponding package
 # is loaded. Load them here so that their docstrings are documented and checked too.

@@ -2,7 +2,7 @@
 
 This page gives an overview of the code gallery. Compared to the [Examples](../examples/index.md),
 these programs do not focus on teaching WaterLily itself. They show what WaterLily can do *in
-combination with the rest of its ecosystem* -- the companion packages that add geometry,
+combination with the rest of its ecosystem* -- the companion packages that add the geometry,
 boundary-condition and coupling machinery the solver deliberately leaves out.
 
 !!! note "Contribute to the gallery!"
@@ -10,21 +10,25 @@ boundary-condition and coupling machinery the solver deliberately leaves out.
     share, please contribute to the gallery! This could be the solver for a published paper, a
     coupling to another code, or just a nice trick.
 
-!!! note "Dependencies outside WaterLily"
-    Every program here needs at least one package beyond WaterLily, named at the top of its page.
-    Those are separate projects with their own release cycles, so a gallery program is a snapshot
-    of how the packages fit together rather than a tested part of WaterLily. Only packages in the
-    General registry can be executed when these docs are built; see the note at the end of this
-    page for the rest.
+!!! note "These programs are not run when the docs are built"
+    Unlike the [Examples](../examples/index.md), gallery programs are shown but not executed. They
+    depend on packages outside this documentation's environment, and several are far too large for
+    a documentation build -- a Biot-Savart or fluid-structure run is not a thing you want on every
+    commit. Each page lists the packages it needs and shows a figure produced by running it
+    separately. The trade-off is the usual one: nothing here is checked by the build, so a program
+    can go stale without anything failing to warn you.
 
 ---
 
 #### [A flexible plate with ParametricBodies](ParametricBodies_FlexiblePlate.md)
 
+![](ParametricBodies_FlexiblePlate.gif)
+
 A thin plate whose shape is a NURBS curve, deforming in a cross-flow while the simulation runs.
 `AutoBody` needs a signed distance function, which a deforming spline does not readily give you;
 [ParametricBodies.jl](https://github.com/WaterLily-jl/ParametricBodies.jl) supplies the distance
-and the body velocity for smooth parametric curves instead, in 2D and 3D.
+and the body velocity for smooth parametric curves instead, in 2D and 3D. This is also the
+interface a structural solver drives in a fluid-structure problem.
 
 **Packages**: [ParametricBodies.jl](https://github.com/WaterLily-jl/ParametricBodies.jl).
 
@@ -36,21 +40,25 @@ These are the packages a gallery program is most likely to reach for:
 
 - [**ParametricBodies.jl**](https://github.com/WaterLily-jl/ParametricBodies.jl) -- bodies defined
   by parametric curves and NURBS rather than by a distance function, including bodies that deform
-  while the simulation runs. Registered, so the program above is executed when these docs build.
+  while the simulation runs.
 - [**BiotSavartBCs.jl**](https://github.com/WaterLily-jl/BiotSavartBCs.jl) -- replaces the domain
   boundary condition with a Biot-Savart evaluation of the velocity induced by the vorticity in the
-  domain, which lets a much smaller domain behave as if it were unbounded. Useful for free bodies
+  domain, so a much smaller domain behaves as if it were unbounded. Useful for freely moving bodies
   and for forces that are sensitive to blockage.
 - [**ForcePartition.jl**](https://github.com/WaterLily-jl/ForcePartition.jl) -- splits a measured
-  force into the physical mechanisms that produce it (vortex-induced, added-mass, viscous), rather
-  than reporting a single number.
+  force into the mechanisms that produce it (vortex-induced, added-mass, viscous) rather than
+  reporting a single number.
 - [**WaterLilyPreCICE.jl**](https://github.com/WaterLily-jl/WaterLilyPreCICE.jl) -- couples
   WaterLily to a structural solver through [preCICE](https://precice.org), for fluid-structure
   interaction where the structure needs a code of its own.
 
-!!! note "Adding a program that needs an unregistered package"
-    Only ParametricBodies is in the General registry today. A gallery program that needs one of
-    the others cannot simply list it in `docs/Project.toml`, so either add it by URL in
-    `docs/make.jl` before the build, or write the page so that its code is shown but not run. The
-    trade-off is the usual one: a program that is not executed cannot produce its own figures, and
-    will go stale without anything failing to warn you.
+Of these, only ParametricBodies is in the General registry; the others are installed from their
+repository URL. Since gallery programs are not executed here, that makes no difference to the
+documentation build -- it only matters when you run one yourself.
+
+## Adding a program
+
+Drop a Literate program into `docs/src/literate-gallery/`, add it to the `pages` list in
+`docs/make.jl`, and give it an entry above. Put the figure next to the program as a `.gif` or
+`.png` with the same name: `docs/generate.jl` copies image files straight through, so it ends up
+beside the generated page and both the page and this overview can link to it.

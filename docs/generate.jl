@@ -30,8 +30,12 @@ mkpath(GALLERY_OUT)
 
         mdpost(str) = replace(str, "@__CODE__" => code_clean)
 
+        ## Gallery programs are shown but not run: they need packages outside this environment,
+        ## and some are far too big for a documentation build. Plain ```julia fences instead of
+        ## Documenter's ```@example means the code is rendered verbatim and never executed.
+        codefence = OUT == GALLERY_OUT ? ("```julia" => "```") : ("```@example $(first(splitext(name)))" => "```")
         @timeit dto "markdown()" @timeit dto name begin
-            Literate.markdown(program, OUT, postprocess = mdpost)
+            Literate.markdown(program, OUT; postprocess = mdpost, codefence)
         end
         if !liveserver
             # Notebooks are shipped unexecuted: the simulations are too expensive to

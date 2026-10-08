@@ -11,7 +11,22 @@
 #md #     [`ParametricBodies_FlexiblePlate.ipynb`](ParametricBodies_FlexiblePlate.ipynb).
 #-
 #
-# **Packages**: [ParametricBodies.jl](https://github.com/WaterLily-jl/ParametricBodies.jl).
+# ## Packages
+#
+# - [**ParametricBodies.jl**](https://github.com/WaterLily-jl/ParametricBodies.jl) -- bodies defined
+#   by parametric curves and NURBS, including ones that deform while the simulation runs.
+# - [**Plots.jl**](https://github.com/JuliaPlots/Plots.jl) -- the flood plot, and the curve recipe
+#   that ParametricBodies provides for drawing the spline and its control points.
+#
+# ParametricBodies is in the General registry, so
+#
+# ```julia
+# pkg> add WaterLily ParametricBodies StaticArrays Plots
+# ```
+#
+# is all it takes to run this program. Like the rest of the
+# [gallery](index.md), it is *not* executed when these docs are built -- the figure
+# above comes from running it separately.
 #
 # ## Introduction
 #
@@ -91,11 +106,11 @@ anim = @animate for tᵢ in range(0, 10; step = 0.1)
     plot!(sim.body.curve; shift = (1.0, 1.0), add_cp = true)
 end
 gif(anim, "ParametricBodies_FlexiblePlate.gif", fps = 24)
-nothing #hide
 
-# The plate sheds from both tips as it sweeps, and the wake carries the signature of the motion
-# rather than of the geometry alone -- the thing that makes flapping and swimming problems
-# interesting, and the reason a deforming body is worth the extra machinery.
+# The figure at the top of the page is the result. The plate sheds from both tips as it sweeps, and
+# the wake carries the signature of the motion rather than of the geometry alone -- the thing that
+# makes flapping and swimming problems interesting, and the reason a deforming body is worth the
+# extra machinery.
 #
 # ### Where this leads
 #

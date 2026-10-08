@@ -34,6 +34,8 @@ LocalPreferences.toml
 *.pvd
 
 # exceptions
+!/docs/src/literate-gallery/*.gif
+!/docs/src/literate-gallery/*.png
 !/docs/src/assets/logo.png
 !/docs/src/assets/favicon.ico
 !/examples/JuliaCon2021.jpg
