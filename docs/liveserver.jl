@@ -28,11 +28,13 @@ LiveServer.servedocs(;
         # to avoid infinite loops where running make.jl updates watched files,
         # which then triggers a new run of make.jl etc.
         joinpath(repo_root, "docs/src/examples"),
+        joinpath(repo_root, "docs/src/gallery"),
     ],
     include_files = [
         joinpath(repo_root, "docs/generate.jl"),
         joinpath(repo_root, "docs/copy_assets.jl"),
         # Watch the index file in the skip_dirs folder
         joinpath(repo_root, "docs/src/examples/index.md"),
+        joinpath(repo_root, "docs/src/gallery/index.md"),
     ],
 )

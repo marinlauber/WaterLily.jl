@@ -15,6 +15,7 @@ ENV["GKSwstype"] = "100"
 
 using Documenter, WaterLily, Plots, StaticArrays
 using JLD2, ReadVTK, WriteVTK
+using ParametricBodies # used by the code gallery
 
 # Parts of the API live in package extensions, and only exist once the corresponding package
 # is loaded. Load them here so that their docstrings are documented and checked too.
@@ -62,6 +63,10 @@ include("generate.jl")
             "examples/ThreeD_TaylorGreenVortex.md",
             "examples/ThreeD_Sphere.md",
         ],
+        "Code gallery" => [
+            "Code gallery overview" => "gallery/index.md",
+            "gallery/ParametricBodies_FlexiblePlate.md",
+        ],
         "API reference" => [
             "Reference overview" => "reference/index.md",
             "reference/simulation.md",
@@ -76,6 +81,19 @@ include("generate.jl")
         ],
     ],
 )
+
+# Insert a <br> in the side menu, before the code gallery
+for (root, _, files) in walkdir(joinpath(@__DIR__, "build")), file in joinpath.(root, files)
+    endswith(file, ".html") || continue
+    str = read(file, String)
+    ## matches both a leaf entry (<a>) and a collapsible section (<label>), whichever the
+    ## gallery ends up being once it has sub-pages
+    str = replace(
+        str,
+        r"""(<li(?: class="is-active")?>(?:<a class="tocitem"[^>]*>|<input[^>]*class="collapse-toggle"[^>]*/><label class="tocitem"[^>]*><span class="docs-label">)Code gallery<)""" => s"<br>\1",
+    )
+    write(file, str)
+end
 
 # Deploy built documentation
 if !liveserver

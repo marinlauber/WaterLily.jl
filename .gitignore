@@ -8,6 +8,8 @@ LocalPreferences.toml
 # Literate.jl output and assets copied in by docs/make.jl
 /docs/src/examples/*
 !/docs/src/examples/index.md
+/docs/src/gallery/*
+!/docs/src/gallery/index.md
 /docs/src/assets/*
 !/docs/src/assets/README.md
 
