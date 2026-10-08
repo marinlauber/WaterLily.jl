@@ -3,20 +3,24 @@ on:
   pull_request:
     paths:
       - '.github/workflows/ci.yml'
+      - 'docs/**'
       - 'ext/**'
       - 'src/**'
       - 'test/**'
       - 'Project.toml'
+      - 'README.md'
   push:
     branches:
       - master
     tags: '*'
     paths:
       - '.github/workflows/ci.yml'
+      - 'docs/**'
       - 'ext/**'
       - 'src/**'
       - 'test/**'
       - 'Project.toml'
+      - 'README.md'
 jobs:
   test:
     if: github.event.pull_request.draft == false
@@ -91,7 +95,9 @@ jobs:
             using Documenter: doctest
             using WaterLily
             doctest(WaterLily)'
-      - run: julia --project=docs docs/make.jl
+      # Examples are Literate.jl programs that are executed during the build, so give
+      # the KernelAbstractions CPU backend some threads to work with.
+      - run: julia --project=docs --threads=auto docs/make.jl
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}

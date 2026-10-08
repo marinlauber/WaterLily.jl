@@ -1,46 +1,92 @@
-using Documenter, WaterLily
+using TimerOutputs
 
-## find all image files in assets/ dir and copy in docs/src/assets/
+dto = TimerOutput()
+reset_timer!(dto)
 
-recursive_find(directory, pattern) =
-    mapreduce(vcat, walkdir(directory)) do (root, dirs, files)
-        joinpath.(root, filter(contains(pattern), files))
-    end
+const liveserver = "liveserver" in ARGS
 
-image_files = []
-
-for pattern in [r"\.gif", r"\.jpg", r"\.png"]
-    global image_files = vcat(image_files, recursive_find(joinpath(@__DIR__, "../assets/"), pattern))
-end
-@show image_files
-@show joinpath(@__DIR__, "src/assets/"*basename.(image_files[1]))
-for file in image_files
-    cp(file, joinpath(@__DIR__, "src/assets/"*basename.(file)), force=true)
+if liveserver
+    using Revise
+    @timeit dto "Revise.revise()" Revise.revise()
 end
 
+# Headless GR: write plots to file without opening a window
+ENV["GKSwstype"] = "100"
 
-## now ready to make the docs
+using Documenter, WaterLily, Plots, StaticArrays
+using JLD2, ReadVTK, WriteVTK
 
-makedocs(
-    modules = [WaterLily],
-    format=Documenter.HTML(;
-        prettyurls=get(ENV, "CI", nothing) == "true",
-        canonical="https://WaterLily-jl.github.io/WaterLily.jl/",
-        assets=String[],
-        mathengine = MathJax3()
+# Parts of the API live in package extensions, and only exist once the corresponding package
+# is loaded. Load them here so that their docstrings are documented and checked too.
+const EXTENSIONS = map(
+    ext -> Base.get_extension(WaterLily, ext),
+    [:WaterLilyPlotsExt, :WaterLilyWriteVTKExt, :WaterLilyReadVTKExt, :WaterLilyJLD2Ext],
+)
+
+const is_ci = haskey(ENV, "GITHUB_ACTIONS")
+
+# Copy the images referenced from the README (which is spliced into the WaterLily
+# docstring, and therefore into the front page) next to the generated pages
+include("copy_assets.jl")
+
+# Generate the examples
+include("generate.jl")
+
+# Build documentation.
+@timeit dto "makedocs" makedocs(
+    modules = [WaterLily, EXTENSIONS...],
+    format = Documenter.HTML(
+        prettyurls = is_ci,
+        canonical = "https://waterlily-jl.github.io/WaterLily.jl/stable",
+        edit_link = "master",
+        assets = ["assets/favicon.ico"], # logo.png in the same folder is picked up automatically
+        mathengine = Documenter.MathJax3(),
+        collapselevel = 1,
     ),
     authors = "Gabriel Weymouth",
     sitename = "WaterLily.jl",
-    pages = ["index.md"]
-    # strict = true,
-    # clean = true,
-    # checkdocs = :exports,
+    draft = liveserver,
+    # In draft mode the examples are not executed and the scripts/notebooks are not written,
+    # so the links to them (and to the figures they produce) cannot resolve locally.
+    warnonly = is_ci ? false : [:cross_references],
+    pages = Any[
+        "Home" => "index.md",
+        "Examples" => [
+            "Examples overview" => "examples/index.md",
+            "examples/TwoD_Circle.md",
+            "examples/TwoD_Square.md",
+            "examples/TwoD_MultipleBodies.md",
+            "examples/TwoD_SlowStartCircle.md",
+            "examples/TwoD_OscillatingFlow.md",
+            "examples/TwoD_Hover.md",
+            "examples/ThreeD_TaylorGreenVortex.md",
+            "examples/ThreeD_Sphere.md",
+        ],
+        "API reference" => [
+            "Reference overview" => "reference/index.md",
+            "reference/simulation.md",
+            "reference/bodies.md",
+            "reference/flow.md",
+            "reference/poisson.md",
+            "reference/metrics.md",
+            "reference/grid.md",
+            "reference/io.md",
+            "reference/plotting.md",
+            "reference/utilities.md",
+        ],
+    ],
 )
 
-deploydocs(
-    repo = "github.com/WaterLily-jl/WaterLily.jl.git",
-    target = "build",
-    branch = "gh-pages",
-    push_preview = true,
-    versions = ["stable" => "v^", "v#.#" ],
-)
+# Deploy built documentation
+if !liveserver
+    @timeit dto "deploydocs" deploydocs(
+        repo = "github.com/WaterLily-jl/WaterLily.jl.git",
+        devbranch = "master",
+        target = "build",
+        branch = "gh-pages",
+        push_preview = true,
+        versions = ["stable" => "v^", "v#.#", "dev" => "dev"],
+    )
+end
+
+print_timer(dto)

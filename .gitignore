@@ -5,6 +5,12 @@ Manifest.toml
 LocalPreferences.toml
 /docs/build/
 
+# Literate.jl output and assets copied in by docs/make.jl
+/docs/src/examples/*
+!/docs/src/examples/index.md
+/docs/src/assets/*
+!/docs/src/assets/README.md
+
 # gfx
 *.png
 *.jpg
@@ -26,6 +32,8 @@ LocalPreferences.toml
 *.pvd
 
 # exceptions
+!/docs/src/assets/logo.png
+!/docs/src/assets/favicon.ico
 !/examples/JuliaCon2021.jpg
 !/examples/JuliaCon2024.png
 !/examples/julia.gif
