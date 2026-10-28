@@ -1,4 +1,4 @@
-/* Code gallery entries, rendered as cards.
+/* Cards for the example and code gallery overviews.
    The markdown for each entry is wrapped in these divs with @raw html blocks, so that the
    links inside stay ordinary markdown and Documenter rewrites them for prettyurls. */
 

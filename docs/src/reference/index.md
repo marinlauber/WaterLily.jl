@@ -1,9 +1,5 @@
 # [API reference](@id api-reference)
 
-The reference is split by the layer of the solver each function belongs to. If you are
-looking for a specific name rather than browsing, the [complete index](#Index) at the bottom
-of this page lists every documented binding.
-
 - **[Simulation](simulation.md)** — the top-level object and its time loop. This is the
   entire public interface for most users.
 - **[Bodies and geometry](bodies.md)** — immersed geometry: signed distance functions,
@@ -20,23 +16,3 @@ of this page lists every documented binding.
 - **[Plotting](plotting.md)** — the plotting helpers used throughout the examples.
 - **[Utilities](utilities.md)** — interpolation, sub-grid-scale modelling, and 2D-to-3D
   field spreading.
-
-```@contents
-Pages = [
-    "simulation.md",
-    "bodies.md",
-    "flow.md",
-    "poisson.md",
-    "metrics.md",
-    "grid.md",
-    "io.md",
-    "plotting.md",
-    "utilities.md",
-]
-Depth = 2
-```
-
-## Index
-
-```@index
-```

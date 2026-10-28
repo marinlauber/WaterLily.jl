@@ -76,22 +76,12 @@ include("generate.jl")
         "Code gallery" => [
             "Code gallery overview" => "gallery/index.md",
             "gallery/ParametricBodies_FlexiblePlate.md",
-        ]
+        ],
+        "The wider ecosystem" => [
+            "Ecosystem overview" => "ecosystem.md",
+        ],
     ],
 )
-
-# Insert a <br> in the side menu, before the code gallery
-for (root, _, files) in walkdir(joinpath(@__DIR__, "build")), file in joinpath.(root, files)
-    endswith(file, ".html") || continue
-    str = read(file, String)
-    ## matches both a leaf entry (<a>) and a collapsible section (<label>), whichever the
-    ## gallery ends up being once it has sub-pages
-    str = replace(
-        str,
-        r"""(<li(?: class="is-active")?>(?:<a class="tocitem"[^>]*>|<input[^>]*class="collapse-toggle"[^>]*/><label class="tocitem"[^>]*><span class="docs-label">)Code gallery<)""" => s"<br>\1",
-    )
-    write(file, str)
-end
 
 # Deploy built documentation
 if !liveserver

@@ -25,7 +25,15 @@ ones before it. [Flow over a circle](TwoD_Circle.md) is the place to start: it i
 the `Simulation` object, the `sim_step!` loop and the plotting helpers that every other
 example reuses.
 
----
+```@raw html
+<div class="gallery-card"><div class="gallery-card-figure">
+```
+
+![](TwoD_Circle.gif)
+
+```@raw html
+</div><div class="gallery-card-body">
+```
 
 #### [Flow over a circle](TwoD_Circle.md)
 
@@ -34,7 +42,19 @@ flow forward, animates the vorticity field, and measures the pressure force on t
 
 **Keywords**: `Simulation`, `AutoBody`, `sim_step!`, `sim_gif!`, `pressure_force`.
 
----
+```@raw html
+</div></div>
+```
+
+```@raw html
+<div class="gallery-card"><div class="gallery-card-figure">
+```
+
+![](TwoD_Square.gif)
+
+```@raw html
+</div><div class="gallery-card-body">
+```
 
 #### [A square from four planes](TwoD_Square.md)
 
@@ -44,7 +64,19 @@ argument that moves a body through the domain.
 
 **Keywords**: constructive solid geometry, `∩`, coordinate `map`.
 
----
+```@raw html
+</div></div>
+```
+
+```@raw html
+<div class="gallery-card"><div class="gallery-card-figure">
+```
+
+![](TwoD_MultipleBodies.gif)
+
+```@raw html
+</div><div class="gallery-card-body">
+```
 
 #### [Many bodies at once](TwoD_MultipleBodies.md)
 
@@ -53,7 +85,19 @@ Shows how to recover the force on the whole collection and on each body separate
 
 **Keywords**: `SetBody`, `∪`, body union, per-body forces.
 
----
+```@raw html
+</div></div>
+```
+
+```@raw html
+<div class="gallery-card"><div class="gallery-card-figure">
+```
+
+![](TwoD_SlowStartCircle.gif)
+
+```@raw html
+</div><div class="gallery-card-body">
+```
 
 #### [A slow-started circle](TwoD_SlowStartCircle.md)
 
@@ -62,7 +106,19 @@ flow from rest. Introduces time-varying boundary conditions and the starting vor
 
 **Keywords**: time-varying `uBC`, impulsive start.
 
----
+```@raw html
+</div></div>
+```
+
+```@raw html
+<div class="gallery-card"><div class="gallery-card-figure">
+```
+
+![](TwoD_OscillatingFlow.gif)
+
+```@raw html
+</div><div class="gallery-card-body">
+```
 
 #### [Oscillating flow over a circle](TwoD_OscillatingFlow.md)
 
@@ -71,7 +127,19 @@ than by the boundary. Also introduces periodic domain directions.
 
 **Keywords**: body force `g`, `perdir`, periodic boundary conditions.
 
----
+```@raw html
+</div></div>
+```
+
+```@raw html
+<div class="gallery-card"><div class="gallery-card-figure">
+```
+
+![](TwoD_Hover.gif)
+
+```@raw html
+</div><div class="gallery-card-body">
+```
 
 #### [A hovering plate](TwoD_Hover.md)
 
@@ -81,7 +149,19 @@ requires remeasuring the body each step.
 
 **Keywords**: moving bodies, `map`, `remeasure`, `ϵ`.
 
----
+```@raw html
+</div></div>
+```
+
+```@raw html
+<div class="gallery-card"><div class="gallery-card-figure">
+```
+
+![](ThreeD_TaylorGreenVortex.gif)
+
+```@raw html
+</div><div class="gallery-card-body">
+```
 
 #### [Taylor-Green vortex](ThreeD_TaylorGreenVortex.md)
 
@@ -91,7 +171,19 @@ how to look at a 3D field.
 
 **Keywords**: 3D, initial condition `u0`, `λ₂`, kinetic energy decay.
 
----
+```@raw html
+</div></div>
+```
+
+```@raw html
+<div class="gallery-card"><div class="gallery-card-figure">
+```
+
+![](ThreeD_Sphere.gif)
+
+```@raw html
+</div><div class="gallery-card-body">
+```
 
 #### [Flow over a sphere](ThreeD_Sphere.md)
 
@@ -100,3 +192,7 @@ grid-refinement check of the drag coefficient. Closes with what changes when the
 is moved onto a GPU.
 
 **Keywords**: 3D, `pressure_force`, `viscous_force`, `viz!`, Makie, grid convergence, GPU backends.
+
+```@raw html
+</div></div>
+```
