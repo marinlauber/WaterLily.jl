@@ -4,8 +4,8 @@
 
 ### Highlights
 
-- **Multithreading on PoCL** ([#365](https://github.com/WaterLily-jl/WaterLily.jl/pull/365)). WaterLily now supports KernelAbstractions 0.10, which runs CPU kernels on [PoCL](https://portablecl.org) threads instead of Julia tasks, compiling them like GPU kernels. KA 0.9 is still supported. From KA 0.10.3, fields are allocated in parallel, so on multi-socket nodes each part of a field is stored in the memory of the socket that computes on it. ⚠️ Functions used inside kernels (`u0`, `uBC`, body `sdf` and `map`, ...) must now be GPU-compatible on the CPU too: no captured types (`T`), no allocations, no `ccall`s (as in SpecialFunctions.jl) and no `Rational`s.
-- **Faster steps.** With KA 0.10 the multithreaded CPU backend is 4 to 17% faster on large grids, and with CUDA.jl 6.5 the GPU is 9 to 26% faster. Small grids can be slower on few threads, where the PoCL launch cost dominates. On Julia 1.13 the kernel launches no longer allocate. The serial SIMD backend is unchanged. See [#365](https://github.com/WaterLily-jl/WaterLily.jl/pull/365) for the benchmarks.
+- **Multithreading on PoCL** ([#365](https://github.com/WaterLily-jl/WaterLily.jl/pull/365)). WaterLily now supports KernelAbstractions 0.10, which runs CPU kernels on [PoCL](https://portablecl.org) threads instead of Julia tasks, compiling them like GPU kernels. KA 0.9 is still supported. Functions used inside kernels (`u0`, `uBC`, body `sdf` and `map`, ...) must now be GPU-compatible on the CPU too.
+- **Faster steps.** With KA 0.10 the multithreaded CPU backend is 4 to 17% faster on large grids, and with CUDA.jl 6.5 the GPU is 9 to 26% faster. Small grids can be slower on few threads, where the PoCL launch cost dominates. On Julia 1.13 the kernel launches no longer allocate. The serial SIMD backend is unchanged.
 - **Pressure solver control** ([#245](https://github.com/WaterLily-jl/WaterLily.jl/pull/245), [@marinlauber](https://github.com/marinlauber)). `sim_step!(sim; poisson_kwargs=(;tol=1e-4, itmx=10))` sets the tolerance and iteration limit of the pressure solve.
 - **Exact pressure operator for large coefficient ratios** ([#375](https://github.com/WaterLily-jl/WaterLily.jl/pull/375), [@TzuYaoHuang](https://github.com/TzuYaoHuang)). `mult` now maps a constant field exactly to zero, so multiphase runs with large density ratios no longer lose volume of the light fluid.
 
@@ -22,9 +22,6 @@
 - **[CoupledSimulations.jl](https://github.com/WaterLily-jl/CoupledSimulations.jl)** allows KA 0.10 ([#5](https://github.com/WaterLily-jl/CoupledSimulations.jl/pull/5)), but it and [WaterLilyMeshBodies.jl](https://github.com/WaterLily-jl/WaterLilyMeshBodies.jl) stay on KA 0.9 until ImplicitBVH.jl supports 0.10 ([StellaOrg/ImplicitBVH.jl#24](https://github.com/StellaOrg/ImplicitBVH.jl/issues/24)).
 - **[BiotSavartBCs.jl](https://github.com/WaterLily-jl/BiotSavartBCs.jl)**, [LilyPad.jl](https://github.com/WaterLily-jl/LilyPad.jl) and [WaterLily-Examples](https://github.com/WaterLily-jl/WaterLily-Examples) needed only test or example fixes for PoCL.
 
-### Thanks
-
-To [@b-fg](https://github.com/b-fg), [@marinlauber](https://github.com/marinlauber) and [@TzuYaoHuang](https://github.com/TzuYaoHuang).
 
 ## v1.10
 
