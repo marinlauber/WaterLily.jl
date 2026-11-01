@@ -11,17 +11,12 @@
 
 ### API changes across the ecosystem
 
-**WaterLily.jl**
-- **`mom_project!(a, b, w, t; kwargs...)`** [1.11.0] ([#245](https://github.com/WaterLily-jl/WaterLily.jl/pull/245)): passes its keyword arguments to `solver!`, and `mom_step!` and `sim_step!` take `poisson_kwargs`. Custom `mom_project!` methods should accept the `solver!` keywords, as BiotSavartBCs.jl's does.
-- **KernelAbstractions 0.10** [1.11.0] ([#365](https://github.com/WaterLily-jl/WaterLily.jl/pull/365)): compat is `0.9.1, 0.10.2`. KA 0.10 makes `GPU` an alias of `Backend`, so backend-specific methods should dispatch on `::CPU` and `::Backend`, as `perdot` and `L₂` now do. New internal helpers: `workgroup(backend)` sets the `@loop` workgroup size, and `zeros_on`/`ones_on` allocate on a KA backend.
+- **KernelAbstractions 0.10** [1.11.0] ([#365](https://github.com/WaterLily-jl/WaterLily.jl/pull/365)): compat is `0.9.1, 0.10.2`. KA 0.10 makes `GPU` an alias of `Backend`, so backend-specific methods should dispatch on `::CPU` and `::Backend`. New internal helpers: `workgroup(backend)` sets the `@loop` workgroup size, and `zeros_on`/`ones_on` allocate on a KA backend.
 - **`update!` and CUDA.jl 6.5**: CUDA.jl 6.5 exports an `update!` too, so code with `using WaterLily, CUDA` must call `WaterLily.update!`.
 
 **Companion packages**
-- **[ParametricBodies.jl](https://github.com/WaterLily-jl/ParametricBodies.jl)** v0.3.5 allows KA 0.10 ([#35](https://github.com/WaterLily-jl/ParametricBodies.jl/pull/35)).
-- **[Pathlines.jl](https://github.com/WaterLily-jl/Pathlines.jl)** no longer depends on LilyPad.jl and restores its Crank-Nicolson `departure` ([#4](https://github.com/WaterLily-jl/Pathlines.jl/pull/4)).
-- **[CoupledSimulations.jl](https://github.com/WaterLily-jl/CoupledSimulations.jl)** allows KA 0.10 ([#5](https://github.com/WaterLily-jl/CoupledSimulations.jl/pull/5)), but it and [WaterLilyMeshBodies.jl](https://github.com/WaterLily-jl/WaterLilyMeshBodies.jl) stay on KA 0.9 until ImplicitBVH.jl supports 0.10 ([StellaOrg/ImplicitBVH.jl#24](https://github.com/StellaOrg/ImplicitBVH.jl/issues/24)).
-- **[BiotSavartBCs.jl](https://github.com/WaterLily-jl/BiotSavartBCs.jl)**, [LilyPad.jl](https://github.com/WaterLily-jl/LilyPad.jl) and [WaterLily-Examples](https://github.com/WaterLily-jl/WaterLily-Examples) needed only test or example fixes for PoCL.
 
+- All downstream packages have received and update to accomodate for KA 0.10 compatibility as well.
 
 ## v1.10
 
