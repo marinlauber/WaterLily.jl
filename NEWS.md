@@ -1,6 +1,32 @@
 # WaterLily.jl release notes
 
-## v1.10.0
+## v1.11
+
+### Highlights
+
+- **Multithreading on PoCL** ([#365](https://github.com/WaterLily-jl/WaterLily.jl/pull/365)). WaterLily now supports KernelAbstractions 0.10, which runs CPU kernels on [PoCL](https://portablecl.org) threads instead of Julia tasks, compiling them like GPU kernels. KA 0.9 is still supported. From KA 0.10.3, fields are allocated in parallel, so on multi-socket nodes each part of a field is stored in the memory of the socket that computes on it. ⚠️ Functions used inside kernels (`u0`, `uBC`, body `sdf` and `map`, ...) must now be GPU-compatible on the CPU too: no captured types (`T`), no allocations, no `ccall`s (as in SpecialFunctions.jl) and no `Rational`s.
+- **Faster steps.** With KA 0.10 the multithreaded CPU backend is 4 to 17% faster on large grids, and with CUDA.jl 6.5 the GPU is 9 to 26% faster. Small grids can be slower on few threads, where the PoCL launch cost dominates. On Julia 1.13 the kernel launches no longer allocate. The serial SIMD backend is unchanged. See [#365](https://github.com/WaterLily-jl/WaterLily.jl/pull/365) for the benchmarks.
+- **Pressure solver control** ([#245](https://github.com/WaterLily-jl/WaterLily.jl/pull/245), [@marinlauber](https://github.com/marinlauber)). `sim_step!(sim; poisson_kwargs=(;tol=1e-4, itmx=10))` sets the tolerance and iteration limit of the pressure solve.
+- **Exact pressure operator for large coefficient ratios** ([#375](https://github.com/WaterLily-jl/WaterLily.jl/pull/375), [@TzuYaoHuang](https://github.com/TzuYaoHuang)). `mult` now maps a constant field exactly to zero, so multiphase runs with large density ratios no longer lose volume of the light fluid.
+
+### API changes across the ecosystem
+
+**WaterLily.jl**
+- **`mom_project!(a, b, w, t; kwargs...)`** [1.11.0] ([#245](https://github.com/WaterLily-jl/WaterLily.jl/pull/245)): passes its keyword arguments to `solver!`, and `mom_step!` and `sim_step!` take `poisson_kwargs`. Custom `mom_project!` methods should accept the `solver!` keywords, as BiotSavartBCs.jl's does.
+- **KernelAbstractions 0.10** [1.11.0] ([#365](https://github.com/WaterLily-jl/WaterLily.jl/pull/365)): compat is `0.9.1, 0.10.2`. KA 0.10 makes `GPU` an alias of `Backend`, so backend-specific methods should dispatch on `::CPU` and `::Backend`, as `perdot` and `L₂` now do. New internal helpers: `workgroup(backend)` sets the `@loop` workgroup size, and `zeros_on`/`ones_on` allocate on a KA backend.
+- **`update!` and CUDA.jl 6.5**: CUDA.jl 6.5 exports an `update!` too, so code with `using WaterLily, CUDA` must call `WaterLily.update!`.
+
+**Companion packages**
+- **[ParametricBodies.jl](https://github.com/WaterLily-jl/ParametricBodies.jl)** v0.3.5 allows KA 0.10 ([#35](https://github.com/WaterLily-jl/ParametricBodies.jl/pull/35)).
+- **[Pathlines.jl](https://github.com/WaterLily-jl/Pathlines.jl)** no longer depends on LilyPad.jl and restores its Crank-Nicolson `departure` ([#4](https://github.com/WaterLily-jl/Pathlines.jl/pull/4)).
+- **[CoupledSimulations.jl](https://github.com/WaterLily-jl/CoupledSimulations.jl)** allows KA 0.10 ([#5](https://github.com/WaterLily-jl/CoupledSimulations.jl/pull/5)), but it and [WaterLilyMeshBodies.jl](https://github.com/WaterLily-jl/WaterLilyMeshBodies.jl) stay on KA 0.9 until ImplicitBVH.jl supports 0.10 ([StellaOrg/ImplicitBVH.jl#24](https://github.com/StellaOrg/ImplicitBVH.jl/issues/24)).
+- **[BiotSavartBCs.jl](https://github.com/WaterLily-jl/BiotSavartBCs.jl)**, [LilyPad.jl](https://github.com/WaterLily-jl/LilyPad.jl) and [WaterLily-Examples](https://github.com/WaterLily-jl/WaterLily-Examples) needed only test or example fixes for PoCL.
+
+### Thanks
+
+To [@b-fg](https://github.com/b-fg), [@marinlauber](https://github.com/marinlauber) and [@TzuYaoHuang](https://github.com/TzuYaoHuang).
+
+## v1.10
 
 WaterLily v1.10 is out. It follows v1.9 by only two weeks, so this note covers everything since **v1.8** (June 2026): 42 pull requests from 6 contributors.
 
